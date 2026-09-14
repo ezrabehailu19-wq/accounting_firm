@@ -3,12 +3,16 @@ include 'includes/includes.inc.php';
 $controler = new Controler();
 $data = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = $_POST['username'];
-    $pass = $_POST['password'];
-    $data = $controler->signup($user, $pass);
-    if ($data === 'You are Registered!') {
-        header('Location: login.php?registered=true');
-        exit();
+    if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+        $data = 'Your session expired. Please refresh the page and try again.';
+    } else {
+        $user = $_POST['username'];
+        $pass = $_POST['password'];
+        $data = $controler->signup($user, $pass);
+        if ($data === 'You are Registered!') {
+            header('Location: login.php?registered=true');
+            exit();
+        }
     }
 }
 ?>
@@ -42,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div style="max-width:400px; margin:0 auto; background:white; padding:2rem; border-radius:var(--radius); box-shadow:var(--shadow-lg);">
                     <form action="" method="post">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
                         <div class="form-group">
                             <label>Username</label>
                             <input type="text" name="username" placeholder="Username" required>

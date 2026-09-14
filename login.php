@@ -3,9 +3,13 @@ include 'includes/includes.inc.php';
 $view = new View();
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = $_POST['username'];
-    $pass = $_POST['password'];
-    $error = $view->login($user, $pass);
+    if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+        $error = 'Your session expired. Please refresh the page and try again.';
+    } else {
+        $user = $_POST['username'];
+        $pass = $_POST['password'];
+        $error = $view->login($user, $pass);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -50,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endif; ?>
 
                     <form action="" method="post">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
                         <div class="form-group">
                             <label>Username</label>
                             <input type="text" name="username" placeholder="Username" required>

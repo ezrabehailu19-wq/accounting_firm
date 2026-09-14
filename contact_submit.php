@@ -2,7 +2,18 @@
 include 'includes/includes.inc.php';
 $controler = new Controler();
 
+header('Content-Type: application/json');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Invalid or expired security token. Please refresh the page and try again.',
+        ]);
+        exit();
+    }
+
     $fullname = $_POST['fullname'];
     $email    = $_POST['email'];
     $phone    = $_POST['phone'] ?? '';

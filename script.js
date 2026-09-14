@@ -1,5 +1,3 @@
-
-
 // ----- 1. Header scroll effect -----
 var header = document.getElementById('header');
 if (header) {
@@ -153,6 +151,16 @@ var contactForm = document.getElementById('contactForm');
 var successModal = document.getElementById('successModal');
 var closeModal = document.getElementById('closeModal');
 
+// Fetch a CSRF token once when the page loads, since contact.html is static
+// and can't render one server-side. Reused for every submit attempt.
+var csrfToken = '';
+if (contactForm) {
+    fetch('csrf_token.php')
+        .then(function (response) { return response.json(); })
+        .then(function (data) { csrfToken = data.token || ''; })
+        .catch(function () { /* token stays empty; server will reject submit */ });
+}
+
 if (contactForm) {
     contactForm.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -196,6 +204,7 @@ if (contactForm) {
 // success message send to php first  then show the modal
         if (isValid) {
     var formData = new FormData(contactForm);
+    formData.append('csrf_token', csrfToken);
 
     fetch('contact_submit.php', {
         method: 'POST',
@@ -208,6 +217,8 @@ if (contactForm) {
         if (data.success && successModal) {
             successModal.classList.add('active');
             contactForm.reset();
+        } else if (!data.success) {
+            alert(data.error || 'Something went wrong. Please try again.');
         }
     })
     .catch(function(error) {
