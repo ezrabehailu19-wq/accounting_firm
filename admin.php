@@ -92,11 +92,15 @@ $messages = $controler->getMessages();
                                 <td style="padding:1rem;"><?php echo htmlspecialchars($row['message']); ?></td>
                                 <td style="padding:1rem;"><?php echo $row['submitted_at']; ?></td>
                                 <td style="padding:1rem;">
-                                    <a href="delete_message.php?id=<?php echo $row['id']; ?>"
-                                       style="color:white; background:#ef4444; padding:0.4rem 0.8rem; border-radius:var(--radius); text-decoration:none; font-size:0.85rem;"
-                                       onclick="return confirm('Delete this message?')">
-                                        Delete
-                                    </a>
+                                    <form action="delete_message.php" method="post"
+                                          onsubmit="return confirm('Delete this message?')" style="margin:0;">
+                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                                        <button type="submit"
+                                                style="color:white; background:#ef4444; padding:0.4rem 0.8rem; border:none; border-radius:var(--radius); cursor:pointer; font-size:0.85rem;">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             <?php endwhile; ?>

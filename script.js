@@ -218,7 +218,26 @@ if (contactForm) {
             successModal.classList.add('active');
             contactForm.reset();
         } else if (!data.success) {
-            alert(data.error || 'Something went wrong. Please try again.');
+            var fieldErrorMap = {
+                fullname: 'nameError',
+                email: 'emailError',
+                message: 'messageError'
+            };
+            var shownFieldError = false;
+            if (data.errors) {
+                for (var field in data.errors) {
+                    if (fieldErrorMap[field]) {
+                        var el = document.getElementById(fieldErrorMap[field]);
+                        if (el) {
+                            el.textContent = data.errors[field];
+                            shownFieldError = true;
+                        }
+                    }
+                }
+            }
+            if (!shownFieldError) {
+                alert(data.error || 'Something went wrong. Please try again.');
+            }
         }
     })
     .catch(function(error) {
