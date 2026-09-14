@@ -22,6 +22,85 @@ protected function setUser($user, $pass, $role = 'user') {
     return "You are Registered!";
 }   
 
+    // LOGIN RATE-LIMITING METHODS
+    // After MAX_ATTEMPTS failed logins for a username, that username is
+    // locked out for LOCKOUT_MINUTES. The counter resets on a successful
+    // login, or naturally once the lockout window passes.
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOCKOUT_MINUTES = 15;
+
+    protected function isLockedOut($user) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("SELECT locked_until FROM login_attempts WHERE username = ?");
+        $stmt->bind_param("s", $user);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            return false;
+        }
+        $row = $result->fetch_assoc();
+        if ($row['locked_until'] === null) {
+            return false;
+        }
+        return strtotime($row['locked_until']) > time();
+    }
+
+    protected function getLockoutMinutesRemaining($user) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("SELECT locked_until FROM login_attempts WHERE username = ?");
+        $stmt->bind_param("s", $user);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows === 0) {
+            return 0;
+        }
+        $row = $result->fetch_assoc();
+        if ($row['locked_until'] === null) {
+            return 0;
+        }
+        $remainingSeconds = strtotime($row['locked_until']) - time();
+        return (int) max(0, ceil($remainingSeconds / 60));
+    }
+
+    protected function recordFailedLoginAttempt($user) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("SELECT attempts FROM login_attempts WHERE username = ?");
+        $stmt->bind_param("s", $user);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            $stmt = $conn->prepare("INSERT INTO login_attempts (username, attempts, last_attempt) VALUES (?, 1, NOW())");
+            $stmt->bind_param("s", $user);
+            $stmt->execute();
+            return;
+        }
+
+        $row = $result->fetch_assoc();
+        $attempts = $row['attempts'] + 1;
+
+        if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
+            $stmt = $conn->prepare(
+                "UPDATE login_attempts SET attempts = ?, last_attempt = NOW(), locked_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE username = ?"
+            );
+           $lockoutMinutes = self::LOCKOUT_MINUTES;
+$stmt->bind_param("iis", $attempts, $lockoutMinutes, $user);
+        } else {
+            $stmt = $conn->prepare(
+                "UPDATE login_attempts SET attempts = ?, last_attempt = NOW() WHERE username = ?"
+            );
+            $stmt->bind_param("is", $attempts, $user);
+        }
+        $stmt->execute();
+    }
+
+    protected function resetLoginAttempts($user) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("DELETE FROM login_attempts WHERE username = ?");
+        $stmt->bind_param("s", $user);
+        $stmt->execute();
+    }
+
     // CONTACT MESSAGE METHODS 
     protected function saveMessage($fullname, $email, $phone, $service, $message) {
         $conn = $this->conn();
