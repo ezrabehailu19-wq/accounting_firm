@@ -1,0 +1,7 @@
+# Environment variables (contains local database credentials)
+.env
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/

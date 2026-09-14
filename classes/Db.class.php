@@ -1,12 +1,8 @@
 <?php
 class Db {
-    private $host = 'localhost';
-    private $user = 'root';
-    private $password = '';
-    private $db = 'accounting_firm';
 
     protected function conn() {
-        $conn = new mysqli($this->host, $this->user, $this->password, $this->db);
+        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         if ($conn->connect_errno) {
             return false;
         }
