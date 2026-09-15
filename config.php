@@ -40,10 +40,8 @@ function loadEnv(string $path): void
         // Strip surrounding quotes, e.g. DB_PASS="secret"
         $value = trim($value, "\"'");
 
-        if (!array_key_exists($key, $_ENV)) {
-            putenv("{$key}={$value}");
-            $_ENV[$key] = $value;
-        }
+        putenv("{$key}={$value}");
+$_ENV[$key] = $value;
     }
 }
 
