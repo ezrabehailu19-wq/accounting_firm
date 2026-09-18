@@ -27,11 +27,13 @@ USE `accounting_firm`;
 CREATE TABLE IF NOT EXISTS `users` (
     `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `username`   VARCHAR(50)  NOT NULL,
+    `email`      VARCHAR(150) NULL,
     `password`   VARCHAR(255) NOT NULL,   -- bcrypt hash via password_hash()
     `role`       ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE KEY `uq_users_username` (`username`)
+    UNIQUE KEY `uq_users_username` (`username`),
+    UNIQUE KEY `uq_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------
@@ -63,6 +65,24 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
     `attempts`      INT UNSIGNED NOT NULL DEFAULT 0,
     `last_attempt`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `locked_until`  TIMESTAMP NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------
+-- password_resets
+-- ---------------------------------------------------------
+-- Stores a SHA-256 hash of each reset token, never the raw
+-- token itself — mirrors how we never store plaintext passwords.
+-- The raw token only ever exists in the emailed link.
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `password_resets` (
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `username`    VARCHAR(50) NOT NULL,
+    `token_hash`  CHAR(64) NOT NULL,
+    `expires_at`  TIMESTAMP NOT NULL,
+    `created_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uq_password_resets_token_hash` (`token_hash`),
+    KEY `idx_password_resets_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------

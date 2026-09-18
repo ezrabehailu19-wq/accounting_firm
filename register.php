@@ -6,12 +6,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? '')) {
         $data = 'Your session expired. Please refresh the page and try again.';
     } else {
-        $user = $_POST['username'];
-        $pass = $_POST['password'];
-        $data = $controler->signup($user, $pass);
-        if ($data === 'You are Registered!') {
-            header('Location: login.php?registered=true');
-            exit();
+        $user = trim($_POST['username'] ?? '');
+        $pass = $_POST['password'] ?? '';
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+
+        if ($email === false) {
+            $data = 'Please enter a valid email address.';
+        } else {
+            $data = $controler->signup($user, $pass, $email);
+            if ($data === 'You are Registered!') {
+                header('Location: login.php?registered=true');
+                exit();
+            }
         }
     }
 }
@@ -50,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-group">
                             <label>Username</label>
                             <input type="text" name="username" placeholder="Username" required>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label>Email</label>
+                            <input type="email" name="email" placeholder="you@example.com" required>
                         </div>
                         <div class="form-group" style="margin-top:1rem;">
                             <label>Password</label>

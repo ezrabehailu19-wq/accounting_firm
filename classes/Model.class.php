@@ -1,4 +1,7 @@
 <?php
+
+date_default_timezone_set('Africa/Addis_Ababa');
+
 class Model extends Db {
 
     
@@ -9,18 +12,30 @@ class Model extends Db {
         $stmt->execute();
         return $stmt->get_result();
     }
-protected function setUser($user, $pass, $role = 'user') {
+protected function setUser($user, $pass, $email, $role = 'user') {
     $check = $this->getUser($user);
     if ($check->num_rows > 0) {
         return "Username already taken!";
     }
+    $emailCheck = $this->getUserByEmail($email);
+    if ($emailCheck->num_rows > 0) {
+        return "That email is already registered!";
+    }
     $hashed = password_hash($pass, PASSWORD_DEFAULT);
     $conn = $this->conn();
-    $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $user, $hashed, $role);
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $user, $email, $hashed, $role);
     $stmt->execute();
     return "You are Registered!";
-}   
+}
+
+    protected function getUserByEmail($email) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        return $stmt->get_result();
+    }   
 
     // LOGIN RATE-LIMITING METHODS
     // After MAX_ATTEMPTS failed logins for a username, that username is
@@ -83,8 +98,7 @@ protected function setUser($user, $pass, $role = 'user') {
             $stmt = $conn->prepare(
                 "UPDATE login_attempts SET attempts = ?, last_attempt = NOW(), locked_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE username = ?"
             );
-           $lockoutMinutes = self::LOCKOUT_MINUTES;
-$stmt->bind_param("iis", $attempts, $lockoutMinutes, $user);
+            $stmt->bind_param("iis", $attempts, self::LOCKOUT_MINUTES, $user);
         } else {
             $stmt = $conn->prepare(
                 "UPDATE login_attempts SET attempts = ?, last_attempt = NOW() WHERE username = ?"
@@ -98,6 +112,57 @@ $stmt->bind_param("iis", $attempts, $lockoutMinutes, $user);
         $conn = $this->conn();
         $stmt = $conn->prepare("DELETE FROM login_attempts WHERE username = ?");
         $stmt->bind_param("s", $user);
+        $stmt->execute();
+    }
+
+    // PASSWORD RESET METHODS
+    // The raw token only ever exists in the emailed link. We store a
+    // SHA-256 hash of it here, the same way we never store plaintext
+    // passwords. Tokens expire after RESET_TOKEN_MINUTES and are
+    // deleted the moment they're used (one-time use).
+    const RESET_TOKEN_MINUTES = 30;
+
+    protected function createPasswordResetToken($username) {
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', time() + (self::RESET_TOKEN_MINUTES * 60) + (3 * 60 * 60));
+
+        $conn = $this->conn();
+
+        // Invalidate any previous outstanding tokens for this user first
+        $stmt = $conn->prepare("DELETE FROM password_resets WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+
+        $stmt = $conn->prepare("INSERT INTO password_resets (username, token_hash, expires_at) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $username, $tokenHash, $expiresAt);
+        $stmt->execute();
+
+        return $rawToken;
+    }
+
+    protected function getValidPasswordReset($rawToken) {
+        $tokenHash = hash('sha256', $rawToken);
+        $conn = $this->conn();
+        $stmt = $conn->prepare("SELECT * FROM password_resets WHERE token_hash = ? AND expires_at > NOW()");
+        $stmt->bind_param("s", $tokenHash);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    protected function deletePasswordResetToken($rawToken) {
+        $tokenHash = hash('sha256', $rawToken);
+        $conn = $this->conn();
+        $stmt = $conn->prepare("DELETE FROM password_resets WHERE token_hash = ?");
+        $stmt->bind_param("s", $tokenHash);
+        $stmt->execute();
+    }
+
+    protected function updatePassword($username, $newPlainPassword) {
+        $hashed = password_hash($newPlainPassword, PASSWORD_DEFAULT);
+        $conn = $this->conn();
+        $stmt = $conn->prepare("UPDATE users SET password = ? WHERE username = ?");
+        $stmt->bind_param("ss", $hashed, $username);
         $stmt->execute();
     }
 
