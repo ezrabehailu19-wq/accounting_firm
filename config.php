@@ -40,8 +40,10 @@ function loadEnv(string $path): void
         // Strip surrounding quotes, e.g. DB_PASS="secret"
         $value = trim($value, "\"'");
 
-        putenv("{$key}={$value}");
-$_ENV[$key] = $value;
+        if (!array_key_exists($key, $_ENV)) {
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+        }
     }
 }
 
@@ -51,3 +53,4 @@ define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
 define('DB_USER', $_ENV['DB_USER'] ?? '');
 define('DB_PASS', $_ENV['DB_PASS'] ?? '');
 define('DB_NAME', $_ENV['DB_NAME'] ?? '');
+define('ADMIN_NOTIFY_EMAIL', $_ENV['ADMIN_NOTIFY_EMAIL'] ?? '');

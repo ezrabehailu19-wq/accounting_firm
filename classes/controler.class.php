@@ -8,7 +8,33 @@ class Controler extends Model {
 
     
     public function submitContact($fullname, $email, $phone, $service, $message) {
-        return $this->saveMessage($fullname, $email, $phone, $service, $message);
+        $result = $this->saveMessage($fullname, $email, $phone, $service, $message);
+        $this->notifyAdminOfNewMessage($fullname, $email, $phone, $service, $message);
+        return $result;
+    }
+
+    private function notifyAdminOfNewMessage($fullname, $email, $phone, $service, $message) {
+        if (empty(ADMIN_NOTIFY_EMAIL)) {
+            return; // not configured — skip silently
+        }
+
+        $subject = 'New contact form submission — ' . $fullname;
+        $body = "You have a new message from the website contact form:\r\n\r\n"
+              . "Name: {$fullname}\r\n"
+              . "Email: {$email}\r\n"
+              . "Phone: " . ($phone !== '' ? $phone : '(not provided)') . "\r\n"
+              . "Service: " . ($service !== '' ? $service : '(not specified)') . "\r\n\r\n"
+              . "Message:\r\n{$message}\r\n";
+        $headers = "From: no-reply@" . ($_SERVER['SERVER_NAME'] ?? 'localhost') . "\r\n"
+                 . "Reply-To: {$email}\r\n";
+
+        // Same caveat as password reset emails: mail() needs a configured
+        // local MTA or SMTP relay to actually deliver anywhere. See the
+        // dev-log fallback below for local testing.
+        @mail(ADMIN_NOTIFY_EMAIL, $subject, $body, $headers);
+
+        $logLine = '[' . date('Y-m-d H:i:s') . "] New message from {$fullname} <{$email}> — would notify " . ADMIN_NOTIFY_EMAIL . "\n";
+        @file_put_contents(__DIR__ . '/../contact_notifications_dev.log', $logLine, FILE_APPEND);
     }
 
     // New: get messages for admin

@@ -4,6 +4,9 @@
 # Dev-only log of password reset links (contains sensitive tokens)
 reset_links_dev.log
 
+# Dev-only log of contact form notifications
+contact_notifications_dev.log
+
 # OS / editor noise
 .DS_Store
 Thumbs.db
