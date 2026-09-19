@@ -1,25 +1,25 @@
 <?php
 /**
- * CSRF protection helpers.
+ * Cross-site request forgery protection.
  *
- * A CSRF token is a random, per-session secret. Every form that changes
- * state (login, register, contact) includes it as a hidden field. When the
- * form is submitted, we check the submitted token matches the one stored
- * server-side in the session. A malicious site tricking a user's browser
- * into submitting the form can't know this token, so the forged request
- * gets rejected.
+ * The problem: your admin is logged in here, then visits a page
+ * somewhere else that quietly posts a form to delete_message.php. The
+ * browser attaches the session cookie automatically, so without a token
+ * the server cannot tell that request apart from a real click.
  *
- * Usage in a PHP-rendered form:
- *   <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+ * The fix: every state-changing form carries a random per-session value
+ * that the other site has no way to read. No token, no action.
  *
- * Usage before processing a POST:
- *   if (!csrf_verify($_POST['csrf_token'] ?? '')) {
- *       // reject the request
- *   }
+ * In a form:
+ *     <?= csrf_field() ?>
  *
- * For forms served from static HTML (no PHP rendering, e.g. contact.html),
- * the token is fetched via csrf_token.php over AJAX instead — see script.js.
+ * Before acting on a POST:
+ *     csrf_guard();          // exits with 403 on failure
+ * or
+ *     if (!csrf_verify($_POST['csrf_token'] ?? '')) { ... }
  */
+
+declare(strict_types=1);
 
 function csrf_start(): void
 {
@@ -39,13 +39,53 @@ function csrf_token(): string
     return $_SESSION['csrf_token'];
 }
 
+/** Ready-made hidden input, so no page can forget the htmlspecialchars. */
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="'
+        . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+}
+
 function csrf_verify(?string $token): bool
 {
     csrf_start();
 
-    if (empty($_SESSION['csrf_token']) || empty($token)) {
+    if (empty($_SESSION['csrf_token']) || $token === null || $token === '') {
         return false;
     }
 
+    // hash_equals compares in constant time. A normal === returns as soon
+    // as two characters differ, which leaks how much of a guessed token
+    // was correct.
     return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Verify or stop. Use at the top of any POST handler.
+ *
+ * @param string|null $redirectTo Where to send a browser; null sends JSON
+ */
+function csrf_guard(?string $redirectTo = null): void
+{
+    if (csrf_verify($_POST['csrf_token'] ?? null)) {
+        return;
+    }
+
+    http_response_code(403);
+
+    if ($redirectTo !== null) {
+        $_SESSION['flash'] = [
+            'type' => 'error',
+            'text' => 'That form expired before it was submitted. Please try again.',
+        ];
+        header('Location: ' . $redirectTo);
+        exit;
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => false,
+        'error'   => 'That form expired before it was submitted. Reload the page and try again.',
+    ]);
+    exit;
 }
