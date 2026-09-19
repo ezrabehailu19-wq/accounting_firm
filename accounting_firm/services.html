@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ========== HEAD SECTION ========== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ensures device compatibility -->
+    <title>Services | Selamawit H/Mariam Accounting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230C1B2A'/><text x='16' y='22' font-family='Georgia' font-size='15' fill='%23C8A04A' text-anchor='middle'>S</text></svg>">
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <!-- ========== HEADER NAVIGATION ========== -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <div class="logo-box">SH</div>
+                <div class="logo-text">
+                    <h1>Selamawit H/Mariam</h1>
+                    <p>Accounting & Financial Consulting</p>
+                </div>
+            </a>
+<!-- shows/hides menu on mobile -->
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+                <span class="hamburger"></span>
+            </button>
+
+            <nav class="navigation" id="navMenu">
+                <ul>
+                    <li><a href="index.html" class="nav-link">Home</a></li>
+                    <li><a href="services.html" class="nav-link active">Services</a></li>
+                    <li><a href="about.html" class="nav-link">About</a></li>
+                    <li><a href="faq.html" class="nav-link">FAQ</a></li>
+                    <li><a href="contact.html" class="nav-link">Contact</a></li>
+                    <li><a href="login.php" class="nav-link">Client portal</a></li>
+                </ul>
+                <a href="contact.html" class="btn btn-primary nav-cta">Book a consultation</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT: SERVICES PAGE ========== -->
+    <main id="main">
+        <!-- ========== SERVICES HERO & NAVIGATION ========== -->
+        <section class="page-section">
+            <div class="container">
+                <a href="index.html" class="back-button">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Back to Home
+                </a>
+
+                <div class="section-header">
+                    <span class="section-badge">Services</span>
+                    <h2 class="section-title">Our Professional Services</h2>
+                    <p class="section-subtitle">Comprehensive accounting solutions for every need</p>
+                </div>
+
+                <img class="services-hero-img" src="images/services.png" alt="Professional accounting and financial documents">
+
+                <!-- ========== SEARCH & FILTER BAR ========== -->
+                <div class="search-filter-bar">
+                    <div class="search-box">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="serviceSearch" placeholder="Search services...">
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="tax">Tax</button>
+                        <button class="filter-btn" data-filter="accounting">Accounting</button>
+                        <button class="filter-btn" data-filter="advisory">Advisory</button>
+                    </div>
+                </div>
+
+                <!-- ========== SERVICES GRID ========== -->
+                <div class="services-grid" id="servicesGrid">
+                    <article class="service-card" data-category="tax">
+                        <div class="service-card-icon">📊</div>
+                        <h3>Tax Filing & Compliance</h3>
+                        <p>Corporate and individual tax return preparation, filing, and strategic tax planning.</p>
+                        <ul class="service-features">
+                            <li>✓ Individual Tax Returns</li>
+                            <li>✓ Corporate Tax Filing</li>
+                            <li>✓ Tax Planning</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+
+                    <article class="service-card" data-category="accounting">
+                        <div class="service-card-icon">📚</div>
+                        <h3>Bookkeeping Services</h3>
+                        <p>Monthly bookkeeping, bank reconciliation, and comprehensive financial reporting.</p>
+                        <ul class="service-features">
+                            <li>✓ Monthly Reconciliation</li>
+                            <li>✓ Financial Statements</li>
+                            <li>✓ Expense Tracking</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+
+                    <article class="service-card" data-category="accounting">
+                        <div class="service-card-icon">💰</div>
+                        <h3>Payroll Management</h3>
+                        <p>Complete payroll processing, benefits administration, and statutory compliance.</p>
+                        <ul class="service-features">
+                            <li>✓ Salary Processing</li>
+                            <li>✓ Tax Deductions</li>
+                            <li>✓ Compliance Reports</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+
+                    <article class="service-card" data-category="advisory">
+                        <div class="service-card-icon">💼</div>
+                        <h3>Financial Advisory</h3>
+                        <p>Expert budgeting, forecasting, and strategic financial planning services.</p>
+                        <ul class="service-features">
+                            <li>✓ Business Planning</li>
+                            <li>✓ Cash Flow Analysis</li>
+                            <li>✓ Growth Strategy</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+
+                    <article class="service-card" data-category="tax">
+                        <div class="service-card-icon">🔍</div>
+                        <h3>Audit & Assurance</h3>
+                        <p>Comprehensive audit services ensuring accuracy and regulatory compliance.</p>
+                        <ul class="service-features">
+                            <li>✓ Internal Audits</li>
+                            <li>✓ Compliance Review</li>
+                            <li>✓ Risk Assessment</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+
+                    <article class="service-card" data-category="advisory">
+                        <div class="service-card-icon">📈</div>
+                        <h3>Business Consulting</h3>
+                        <p>Strategic consulting to help your business grow and optimize operations.</p>
+                        <ul class="service-features">
+                            <li>✓ Process Optimization</li>
+                            <li>✓ Cost Reduction</li>
+                            <li>✓ Strategic Planning</li>
+                        </ul>
+                        <a href="contact.html" class="btn btn-outline">Get Quote</a>
+                    </article>
+                </div>
+
+                <!-- ========== SERVICE COST ESTIMATOR ========== -->
+                <div class="cost-estimator-section">
+                    <div class="section-header">
+                        <span class="section-badge">Cost Calculator</span>
+                        <h2 class="section-title">Service Cost Estimator</h2>
+                        <p class="section-subtitle">Get an instant estimate for our services</p>
+                    </div>
+                    
+                    <div class="estimator-container">
+                        <div class="estimator-form">
+                            <!-- ESTIMATOR FORM FIELDS -->
+                            <div class="form-group">
+                                <label for="serviceType">Service Type</label>
+                                <select id="serviceType" class="form-control">
+                                    <option value="">Select a service</option>
+                                    <option value="tax" data-price="8000">Tax Filing & Compliance - 8,000 ETB/month</option>
+                                    <option value="bookkeeping" data-price="5000">Bookkeeping Services - 5,000 ETB/month</option>
+                                    <option value="payroll" data-price="6000">Payroll Management - 6,000 ETB/month</option>
+                                    <option value="advisory" data-price="10000">Financial Advisory - 10,000 ETB/month</option>
+                                    <option value="audit" data-price="15000">Audit & Assurance - 15,000 ETB/month</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="serviceDuration">Duration (Months) - Multiplies Monthly Rate</label>
+                                <input type="number" id="serviceDuration" class="form-control" min="1" max="12" value="1">
+                                <small style="color: var(--gray-600); font-size: 0.875rem; margin-top: 0.25rem; display: block;">Note: Base prices are monthly rates. Extras are one-time fees.</small>
+                            </div>
+                            
+                            <!-- ADDITIONAL SERVICES CHECKBOXES -->
+                            <div class="form-group">
+                                <label>Additional Services</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="prioritySupport" data-price="1500">
+                                        <span class="checkmark"></span>
+                                        Priority Support (+1,500 ETB)
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="detailedReports" data-price="2000">
+                                        <span class="checkmark"></span>
+                                        Detailed Reports (+2,000 ETB)
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="consultation" data-price="2500">
+                                        <span class="checkmark"></span>
+                                        Extra Consultation (+2,500 ETB)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- CALCULATE BUTTON AND RESULT -->
+                            <button id="calculateBtn" class="btn btn-primary">Calculate Total</button>
+                            
+                            <div class="estimate-result" id="estimateResult" style="display: none;">
+                                <div class="result-label">Estimated Total Cost:</div>
+                                <div class="result-amount" id="totalAmount">0 ETB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== DOCUMENT CHECKLIST DOWNLOADER ========== -->
+                <div class="checklist-section">
+                    <div class="section-header">
+                        <span class="section-badge">Resources</span>
+                        <h2 class="section-title">Service Document Checklist</h2>
+                        <p class="section-subtitle">Get a customized document checklist based on your service needs</p>
+                    </div>
+                    
+                    <div class="checklist-container">
+                        <div class="checklist-form">
+                            <!-- CHECKLIST FORM FIELDS -->
+                            <div class="form-group">
+                                <label for="checklistService">Select Service for Document Checklist</label>
+                                <select id="checklistService" class="form-control">
+                                    <option value="">Choose a service to generate checklist</option>
+                                    <option value="tax">Tax Filing & Compliance</option>
+                                    <option value="bookkeeping">Bookkeeping Services</option>
+                                    <option value="payroll">Payroll Management</option>
+                                    <option value="advisory">Financial Advisory</option>
+                                    <option value="audit">Audit & Assurance</option>
+                                </select>
+                            </div>
+                            
+                            <!-- DOWNLOAD BUTTON AND INFO -->
+                            <button id="downloadChecklistBtn" class="btn btn-success" style="display: none;">
+                                <i class="fas fa-download"></i> Download Checklist with Checkboxes
+                            </button>
+                            
+                            <div class="checklist-info" id="checklistInfo" style="display: none;">
+                                <p><i class="fas fa-info-circle"></i> Your downloadable checklist will include all required documents with checkboxes ready for printing and manual tracking.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== FOOTER SECTION ========== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <div class="logo-box">SH</div>
+                        <div class="logo-text">
+                            <h1>Selamawit H/Mariam</h1>
+                            <p>Accounting &amp; Financial Consulting</p>
+                        </div>
+                    </div>
+                    <p class="footer-description">
+                        Ureal Area, 6th Floor, Addis Ababa, Ethiopia.<br>
+                        Registered accountants and auditors.
+                    </p>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Site</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="services.html">Tax &amp; VAT filing</a></li>
+                        <li><a href="services.html">Bookkeeping</a></li>
+                        <li><a href="services.html">Payroll</a></li>
+                        <li><a href="services.html">Audit</a></li>
+                        <li><a href="services.html">Advisory</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Clients</h4>
+                    <ul>
+                        <li><a href="login.php">Sign in</a></li>
+                        <li><a href="register.php">Create an account</a></li>
+                        <li><a href="contact.html">Send a request</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear">2026</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+                <p>+251 933 5831 · Addis Ababa</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== SCROLL TO TOP BUTTON ========== -->
+    <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <!-- ========== JAVASCRIPT FILES ========== -->
+    <script src="script.js" defer></script>
+</body>
+</html>

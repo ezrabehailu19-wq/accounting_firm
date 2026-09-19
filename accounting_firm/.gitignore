@@ -1,0 +1,23 @@
+# Local configuration — contains the database password
+.env
+
+# Uploaded client documents and the mail log. Never in version control:
+# this is client financial data.
+storage/documents/*
+!storage/documents/.gitkeep
+storage/mail.log
+
+# The one-time setup script should be deleted after use, not committed
+# with any edits.
+# setup_admin.php
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Dependencies and build output, if you ever add them
+/vendor/
+/node_modules/

@@ -60,6 +60,11 @@ $messages = $controler->getMessages();
                         <span class="stat-number"><?php echo $controler->countUsers(); ?></span>
                         <p class="stat-label">Registered Users</p>
                     </div>
+                    <div class="stat-item">
+    <div class="stat-icon">🆕</div>
+    <span class="stat-number"><?php echo $controler->getNewMessagesCount(); ?></span>
+    <p class="stat-label">New Messages</p>
+</div>
                 </div>
 
                 <div class="section-header">

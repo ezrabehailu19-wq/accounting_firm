@@ -1,7 +1,4 @@
 <?php
-
-date_default_timezone_set('Africa/Addis_Ababa');
-
 class Model extends Db {
 
     
@@ -125,7 +122,7 @@ protected function setUser($user, $pass, $email, $role = 'user') {
     protected function createPasswordResetToken($username) {
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $expiresAt = date('Y-m-d H:i:s', time() + (self::RESET_TOKEN_MINUTES * 60) + (3 * 60 * 60));
+        $expiresAt = date('Y-m-d H:i:s', time() + self::RESET_TOKEN_MINUTES * 60);
 
         $conn = $this->conn();
 
@@ -178,6 +175,46 @@ protected function setUser($user, $pass, $email, $role = 'user') {
     protected function getAllMessages() {
         $stmt = "SELECT * FROM contact_messages ORDER BY submitted_at DESC";
         return $this->conn()->query($stmt);
+    }
+
+    protected function getMessagesFiltered($status, $limit, $offset) {
+        $conn = $this->conn();
+        if ($status === 'all' || empty($status)) {
+            $stmt = $conn->prepare("SELECT * FROM contact_messages ORDER BY submitted_at DESC LIMIT ? OFFSET ?");
+            $stmt->bind_param("ii", $limit, $offset);
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM contact_messages WHERE status = ? ORDER BY submitted_at DESC LIMIT ? OFFSET ?");
+            $stmt->bind_param("sii", $status, $limit, $offset);
+        }
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    protected function countMessagesFiltered($status) {
+        $conn = $this->conn();
+        if ($status === 'all' || empty($status)) {
+            $result = $conn->query("SELECT COUNT(*) as total FROM contact_messages");
+        } else {
+            $stmt = $conn->prepare("SELECT COUNT(*) as total FROM contact_messages WHERE status = ?");
+            $stmt->bind_param("s", $status);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        }
+        $row = $result->fetch_assoc();
+        return (int) $row['total'];
+    }
+
+    protected function countNewMessages() {
+        $result = $this->conn()->query("SELECT COUNT(*) as total FROM contact_messages WHERE status = 'new'");
+        $row = $result->fetch_assoc();
+        return (int) $row['total'];
+    }
+
+    protected function setMessageStatus($id, $status) {
+        $conn = $this->conn();
+        $stmt = $conn->prepare("UPDATE contact_messages SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $status, $id);
+        $stmt->execute();
     }
 
     protected function getUserCount() {

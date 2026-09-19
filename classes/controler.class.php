@@ -42,6 +42,38 @@ class Controler extends Model {
         return $this->getAllMessages();
     }
 
+    const MESSAGES_PER_PAGE = 10;
+    const VALID_MESSAGE_STATUSES = ['new', 'read', 'replied'];
+
+    public function getMessagesPage($status, $page) {
+        $status = in_array($status, self::VALID_MESSAGE_STATUSES, true) ? $status : 'all';
+        $page = max(1, (int) $page);
+        $offset = ($page - 1) * self::MESSAGES_PER_PAGE;
+        return $this->getMessagesFiltered($status, self::MESSAGES_PER_PAGE, $offset);
+    }
+
+    public function getMessagesTotalCount($status) {
+        $status = in_array($status, self::VALID_MESSAGE_STATUSES, true) ? $status : 'all';
+        return $this->countMessagesFiltered($status);
+    }
+
+    public function getMessagesTotalPages($status) {
+        $total = $this->getMessagesTotalCount($status);
+        return max(1, (int) ceil($total / self::MESSAGES_PER_PAGE));
+    }
+
+    public function getNewMessagesCount() {
+        return $this->countNewMessages();
+    }
+
+    public function updateMessageStatus($id, $status) {
+        if (!in_array($status, self::VALID_MESSAGE_STATUSES, true)) {
+            return false;
+        }
+        $this->setMessageStatus((int) $id, $status);
+        return true;
+    }
+
     public function countUsers() {
     return $this->getUserCount();
 }

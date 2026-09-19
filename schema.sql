@@ -46,9 +46,11 @@ CREATE TABLE IF NOT EXISTS `contact_messages` (
     `phone`         VARCHAR(30)  NULL,
     `service`       VARCHAR(100) NULL,
     `message`       TEXT NOT NULL,
+    `status`        ENUM('new', 'read', 'replied') NOT NULL DEFAULT 'new',
     `submitted_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    KEY `idx_contact_messages_submitted_at` (`submitted_at`)
+    KEY `idx_contact_messages_submitted_at` (`submitted_at`),
+    KEY `idx_contact_messages_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------
