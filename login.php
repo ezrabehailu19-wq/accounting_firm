@@ -1,88 +1,80 @@
 <?php
-include 'includes/includes.inc.php';
-$view = new View();
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['csrf_token'] ?? '')) {
-        $error = 'Your session expired. Please refresh the page and try again.';
-    } else {
-        $user = $_POST['username'];
-        $pass = $_POST['password'];
-        $error = $view->login($user, $pass);
-    }
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/includes.inc.php';
+require_once __DIR__ . '/includes/layout.inc.php';
+
+// Already signed in? Don't show a login form, just go where they belong.
+if (is_logged_in()) {
+    redirect(is_admin() ? 'admin.php' : 'user_dashboard.php');
 }
+
+$auth  = new Auth();
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_guard('login.php');
+
+    $result = $auth->attempt(post_str('username'), $_POST['password'] ?? '');
+
+    if ($result['ok']) {
+        // Send them back to whatever they were trying to reach before the
+        // login wall, but only if it is a path on this site — an open
+        // redirect here would let a phishing link bounce through us.
+        $intended = $_SESSION['redirect_after_login'] ?? '';
+        unset($_SESSION['redirect_after_login']);
+
+        $isSafe = $intended !== ''
+            && strpos($intended, '//') === false
+            && strpos($intended, ':') === false;
+
+        if ($isSafe) {
+            redirect($intended);
+        }
+
+        redirect($result['user']['role'] === 'admin' ? 'admin.php' : 'user_dashboard.php');
+    }
+
+    $error = $result['error'];
+}
+
+auth_head('Sign in', 'Access your requests, documents and invoices.');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Login | Selamawit H/Mariam</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header class="header" id="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <div class="logo-box">SH</div>
-                <div class="logo-text">
-                    <h1>Selamawit H/Mariam</h1>
-                    <p>Accounting & Financial Consulting</p>
-                </div>
-            </a>
-        </div>
-    </header>
 
-    <main>
-        <section class="page-section">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-badge">Welcome</span>
-                    <h2 class="section-title">Login</h2>
-                </div>
-                <div style="max-width:400px; margin:0 auto; background:white; padding:2rem; border-radius:var(--radius); box-shadow:var(--shadow-lg);">
-                    <?php if(isset($_GET['registered'])): ?>
-                            <p style="
-                                margin-top:0.5rem;
-                                padding:0.75rem 1rem;
-                                border-radius:var(--radius);
-                                background:#d1fae5;
-                                color:#065f46;
-                                border:1px solid #6ee7b7;
-                            ">
-                                Account created successfully! Please login.
-                            </p>
-                    <?php endif; ?>
+<?php if (isset($_GET['registered'])): ?>
+    <div class="notice notice--success">Account created. Sign in to continue.</div>
+<?php endif; ?>
 
-                    <form action="" method="post">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                        <div class="form-group">
-                            <label>Username</label>
-                            <input type="text" name="username" placeholder="Username" required>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Password</label>
-                            <input type="password" name="password" placeholder="Password" required>
-                        </div>
-                        <?php if($error): ?>
-                            <p style="
-                                margin-top:0.5rem;
-                                padding:0.75rem 1rem;
-                                border-radius:var(--radius);
-                                background:#fee2e2;
-                                color:#991b1b;
-                                border:1px solid #fca5a5;
-                            ">
-                                <?php echo $error; ?>
-                            </p>
-                        <?php endif; ?>
-                        <button type="submit" class="btn btn-primary btn-full" style="margin-top:1rem;">Login</button>
-                    </form>
-                    <p style="text-align:center; margin-top:1rem;">No account? <a href="register.php">Register</a></p>
-                    <p style="text-align:center; margin-top:0.5rem;"><a href="forgot_password.php">Forgot your password?</a></p>
-                </div>
-            </div>
-        </section>
-    </main>
-    <script src="script.js"></script>
-</body>
-</html>
+<?php if (isset($_GET['reset'])): ?>
+    <div class="notice notice--success">Password updated. Sign in with your new password.</div>
+<?php endif; ?>
+
+<?php if ($error !== ''): ?>
+    <div class="notice notice--error"><?= e($error) ?></div>
+<?php endif; ?>
+
+<form method="post" action="login.php" class="stack">
+    <?= csrf_field() ?>
+
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus
+               value="<?= e(post_str('username')) ?>" autocomplete="username">
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full">Sign in</button>
+</form>
+
+<p class="gate__alt">
+    <a href="forgot_password.php">Forgot your password?</a>
+</p>
+<p class="gate__alt">
+    No account yet? <a href="register.php">Create one</a>
+</p>
+
+<?php auth_foot();
