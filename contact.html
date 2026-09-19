@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact | Selamawit H/Mariam Accounting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230C1B2A'/><text x='16' y='22' font-family='Georgia' font-size='15' fill='%23C8A04A' text-anchor='middle'>S</text></svg>">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <!-- HEADER -->
     <header class="header" id="header">
         <div class="header-container">
@@ -29,14 +34,15 @@
                     <li><a href="about.html" class="nav-link">About</a></li>
                     <li><a href="faq.html" class="nav-link">FAQ</a></li>
                     <li><a href="contact.html" class="nav-link active">Contact</a></li>
+                    <li><a href="login.php" class="nav-link">Client portal</a></li>
                 </ul>
-                <a href="contact.html" class="btn btn-primary nav-cta">Get Started</a>
+                <a href="contact.html" class="btn btn-primary nav-cta">Book a consultation</a>
             </nav>
         </div>
     </header>
 
     <!-- MAIN: CONTACT -->
-    <main>
+    <main id="main">
         <section class="page-section">
             <div class="container">
                 <a href="index.html" class="back-button">
@@ -56,12 +62,12 @@
                     <form class="contact-form" id="contactForm">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="fullname">Full Name *</label>
+                                <label for="fullname">Full name *</label>
                                 <input type="text" id="fullname" name="fullname" placeholder="Your full name" required>
                                 <span class="error-message" id="nameError"></span>
                             </div>
                             <div class="form-group">
-                                <label for="email">Email Address *</label>
+                                <label for="email">Email address *</label>
                                 <input type="email" id="email" name="email" placeholder="you@example.com" required>
                                 <span class="error-message" id="emailError"></span>
                             </div>
@@ -69,30 +75,30 @@
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="phone">Phone Number</label>
+                                <label for="phone">Phone number</label>
                                 <input type="tel" id="phone" name="phone" placeholder="+251 9xx xxx xxx">
                             </div>
                             <div class="form-group">
-                                <label for="service">Service Interested In</label>
+                                <label for="service">What do you need help with?</label>
                                 <select id="service" name="service">
-                                    <option value="">Select a service</option>
-                                    <option value="tax">Tax Filing & Compliance</option>
-                                    <option value="bookkeeping">Bookkeeping</option>
-                                    <option value="payroll">Payroll Management</option>
-                                    <option value="advisory">Financial Advisory</option>
-                                    <option value="audit">Audit & Assurance</option>
-                                    <option value="other">Other</option>
+                                    <option value="">Choose one</option>
+                                    <option value="Tax filing &amp; compliance">Tax filing &amp; compliance</option>
+                                    <option value="Bookkeeping">Bookkeeping</option>
+                                    <option value="Payroll management">Payroll management</option>
+                                    <option value="Financial advisory">Financial advisory</option>
+                                    <option value="Audit &amp; assurance">Audit &amp; assurance</option>
+                                    <option value="Other">Something else</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="message">Message *</label>
-                            <textarea id="message" name="message" rows="5" placeholder="Tell us about your needs..." required></textarea>
+                            <textarea id="message" name="message" rows="5" placeholder="Tell us what you need, and any deadline you are working to." required></textarea>
                             <span class="error-message" id="messageError"></span>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+                        <button type="submit" class="btn btn-primary btn-full">Send message</button>
 
                         <div class="form-message" id="formMessage"></div>
                     </form>
@@ -170,13 +176,17 @@
                         <div class="logo-box">SH</div>
                         <div class="logo-text">
                             <h1>Selamawit H/Mariam</h1>
-                            <p>Accounting & Financial Consulting</p>
+                            <p>Accounting &amp; Financial Consulting</p>
                         </div>
                     </div>
-                    <p class="footer-description">Your trusted partner for professional accounting and financial services.</p>
+                    <p class="footer-description">
+                        Ureal Area, 6th Floor, Addis Ababa, Ethiopia.<br>
+                        Registered accountants and auditors.
+                    </p>
                 </div>
+
                 <div class="footer-links">
-                    <h4>Quick Links</h4>
+                    <h4>Site</h4>
                     <ul>
                         <li><a href="index.html">Home</a></li>
                         <li><a href="services.html">Services</a></li>
@@ -185,18 +195,31 @@
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </div>
+
                 <div class="footer-links">
                     <h4>Services</h4>
                     <ul>
-                        <li><a href="services.html">Tax Filing</a></li>
+                        <li><a href="services.html">Tax &amp; VAT filing</a></li>
                         <li><a href="services.html">Bookkeeping</a></li>
                         <li><a href="services.html">Payroll</a></li>
+                        <li><a href="services.html">Audit</a></li>
                         <li><a href="services.html">Advisory</a></li>
                     </ul>
                 </div>
+
+                <div class="footer-links">
+                    <h4>Clients</h4>
+                    <ul>
+                        <li><a href="login.php">Sign in</a></li>
+                        <li><a href="register.php">Create an account</a></li>
+                        <li><a href="contact.html">Send a request</a></li>
+                    </ul>
+                </div>
             </div>
+
             <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2025</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+                <p>&copy; <span id="currentYear">2026</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+                <p>+251 933 5831 · Addis Ababa</p>
             </div>
         </div>
     </footer>
@@ -205,8 +228,13 @@
     <div class="modal" id="successModal">
         <div class="modal-content">
             <div class="modal-icon">✓</div>
-            <h3>Message Sent!</h3>
-            <p>Thank you for contacting us. We'll get back to you within 24 hours.</p>
+            <h3>Request received</h3>
+            <p>
+                Keep this reference — quote it if you call us:<br>
+                <strong class="num" data-reference>—</strong>
+            </p>
+            <p>We reply within one working day. Registered clients can follow
+               progress in the <a href="login.php">client portal</a>.</p>
             <button class="btn btn-primary" id="closeModal">Close</button>
         </div>
     </div>
@@ -217,6 +245,6 @@
         </svg>
     </button>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
