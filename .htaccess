@@ -1,23 +1,34 @@
-# Block direct web access to sensitive files that should never be
-# served to a browser, even if they end up in the web root on a real
-# deployment. Has no effect on PHP's built-in server (php -S).
+# ---------------------------------------------------------
+#  Root .htaccess (Apache)
+#
+#  Nginx users: these rules have direct equivalents. See README.md.
+# ---------------------------------------------------------
 
-<FilesMatch "^\.env">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
+# Never list the contents of a folder that has no index file.
+Options -Indexes
+
+# Don't advertise the PHP version in response headers.
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Block access to dotfiles — .env above all, which holds the database
+# password. Without this rule, a misconfigured server will happily
+# serve it as plain text.
+<FilesMatch "^\.">
+    Require all denied
 </FilesMatch>
 
-<FilesMatch "\.sql$">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
+# And to anything that is configuration or data rather than a page.
+<FilesMatch "\.(env|sql|log|md|ini|bak|old|sh|yml|yaml|json|lock)$">
+    Require all denied
 </FilesMatch>
+
+# Default document
+DirectoryIndex index.html index.php
+
+# A friendlier 404 than the Apache default
+ErrorDocument 404 /index.html
