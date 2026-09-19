@@ -1,128 +1,195 @@
 <?php
-session_start();
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
-}
-include 'includes/includes.inc.php';
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/includes.inc.php';
+require_once __DIR__ . '/includes/layout.inc.php';
+
+$admin     = require_admin();
 $controler = new Controler();
-$messages = $controler->getMessages();
-$total = $messages->num_rows;
-$messages = $controler->getMessages();
+
+$statusCounts = $controler->requestStatusCounts();
+$invoices     = $controler->invoiceSummary();      // also refreshes overdue
+$userCount    = $controler->users(1)['total'];
+$docCount     = $controler->documentCount();
+$activity     = $controler->requestActivity(14);
+$recent       = $controler->requests(1, 'new')['rows'];
+$auditFeed    = $controler->recentActivity(7);
+
+// Fill in the days with no messages so the chart reads as a real
+// fortnight rather than a handful of bars with gaps between them.
+$byDay = [];
+foreach ($activity as $row) {
+    $byDay[$row['day']] = (int) $row['n'];
+}
+
+$series = [];
+for ($i = 13; $i >= 0; $i--) {
+    $day      = date('Y-m-d', strtotime("-{$i} days"));
+    $series[] = ['day' => $day, 'n' => $byDay[$day] ?? 0];
+}
+$peak = max(1, max(array_column($series, 'n')));
+
+portal_head('Overview', 'dashboard', [
+    'subtitle' => 'How the practice is tracking right now',
+    'actions'  => '<a class="btn btn-brass btn-sm" href="admin_invoice_form.php">New invoice</a>',
+]);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Selamawit H/Mariam</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body style="display:flex; flex-direction:column; min-height:100vh;">
-    <header class="header" id="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <div class="logo-box">SH</div>
-                <div class="logo-text">
-                    <h1>Selamawit H/Mariam</h1>
-                    <p>Accounting & Financial Consulting</p>
-                </div>
-            </a>
-            <nav class="navigation" id="navMenu">
-                <ul>
-                    <li><a href="admin.php" class="nav-link active">Dashboard</a></li>
-                    <li><a href="admin_messages.php" class="nav-link">Messages</a></li>
-                    <li><a href="admin_users.php" class="nav-link">Users</a></li>
-                    <li><a href="index.html" class="nav-link">View Site</a></li>
-                </ul>
-                <a href="logout.php" class="btn btn-primary nav-cta">Logout</a>
-            </nav>
-        </div>
-    </header>
 
-    <main style="flex:1;">
-        <section class="page-section">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-badge">Admin Panel</span>
-                    <h2 class="section-title">Welcome, Selamawit!</h2>
-                    <p class="section-subtitle">Manage your website from here</p>
-                </div>
+<section class="metrics">
+    <article class="metric metric--brass">
+        <span class="metric__label">Unopened requests</span>
+        <span class="metric__value"><?= (int) $statusCounts['new'] ?></span>
+        <span class="metric__note">
+            <?= (int) $statusCounts['in_progress'] ?> in progress ·
+            <?= (int) $statusCounts['all'] ?> all time
+        </span>
+    </article>
 
-                <div class="stats-grid" style="margin-bottom:3rem;">
-                    <div class="stat-item">
-                        <div class="stat-icon">✉️</div>
-                        <span class="stat-number"><?php echo $total; ?></span>
-                        <p class="stat-label">Total Messages</p>
+    <article class="metric metric--debit">
+        <span class="metric__label">Outstanding</span>
+        <span class="metric__value metric__value--money"><?= e(money($invoices['outstanding'])) ?></span>
+        <span class="metric__note">
+            <strong><?= (int) $invoices['overdue_count'] ?></strong> overdue,
+            <?= e(money($invoices['overdue_amount'])) ?>
+        </span>
+    </article>
+
+    <article class="metric metric--credit">
+        <span class="metric__label">Collected</span>
+        <span class="metric__value metric__value--money"><?= e(money($invoices['billed_paid'])) ?></span>
+        <span class="metric__note"><?= (int) $invoices['count_all'] ?> invoices issued</span>
+    </article>
+
+    <article class="metric">
+        <span class="metric__label">Clients &amp; files</span>
+        <span class="metric__value"><?= (int) $userCount ?></span>
+        <span class="metric__note"><?= (int) $docCount ?> documents on file</span>
+    </article>
+</section>
+
+<div class="grid-side">
+    <div class="stack">
+        <section class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Requests, last 14 days</h2>
+                    <p>Each bar is one day. The tallest is highlighted.</p>
+                </div>
+            </div>
+            <div class="panel__body">
+                <?php if (array_sum(array_column($series, 'n')) === 0): ?>
+                    <?= empty_state('Nothing came in this fortnight', 'New contact form submissions will appear here as they arrive.') ?>
+                <?php else: ?>
+                    <div class="chart" role="img"
+                         aria-label="Requests per day over the last 14 days">
+                        <?php foreach ($series as $point): ?>
+                            <?php $height = max(3, (int) round(($point['n'] / $peak) * 100)); ?>
+                            <div class="chart__col<?= $point['n'] === $peak && $peak > 0 ? ' chart__col--peak' : '' ?>"
+                                 title="<?= e(fmt_date($point['day'])) ?>: <?= (int) $point['n'] ?>">
+                                <span class="chart__bar" style="height: <?= $height ?>%"></span>
+                                <span class="chart__tick"><?= e(date('j', strtotime($point['day']))) ?></span>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-icon">👥</div>
-                        <span class="stat-number"><?php echo $controler->countUsers(); ?></span>
-                        <p class="stat-label">Registered Users</p>
-                    </div>
-                    <div class="stat-item">
-    <div class="stat-icon">🆕</div>
-    <span class="stat-number"><?php echo $controler->getNewMessagesCount(); ?></span>
-    <p class="stat-label">New Messages</p>
-</div>
-                </div>
-
-                <div class="section-header">
-                    <span class="section-badge">Inbox</span>
-                    <h2 class="section-title">Recent Messages</h2>
-                </div>
-
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden;">
-                        <thead>
-                            <tr style="background:var(--primary); color:white;">
-                                <th style="padding:1rem; text-align:left;">#</th>
-                                <th style="padding:1rem; text-align:left;">Name</th>
-                                <th style="padding:1rem; text-align:left;">Email</th>
-                                <th style="padding:1rem; text-align:left;">Phone</th>
-                                <th style="padding:1rem; text-align:left;">Service</th>
-                                <th style="padding:1rem; text-align:left;">Message</th>
-                                <th style="padding:1rem; text-align:left;">Date</th>
-                                <th style="padding:1rem; text-align:left;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $messages->fetch_assoc()): ?>
-                            <tr style="border-bottom:1px solid var(--gray-200);">
-                                <td style="padding:1rem;"><?php echo $row['id']; ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['fullname']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['email']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['phone']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['service']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['message']); ?></td>
-                                <td style="padding:1rem;"><?php echo $row['submitted_at']; ?></td>
-                                <td style="padding:1rem;">
-                                    <form action="delete_message.php" method="post"
-                                          onsubmit="return confirm('Delete this message?')" style="margin:0;">
-                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                        <button type="submit"
-                                                style="color:white; background:#ef4444; padding:0.4rem 0.8rem; border:none; border-radius:var(--radius); cursor:pointer; font-size:0.85rem;">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
+                <?php endif; ?>
             </div>
         </section>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2025</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+        <section class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Waiting on you</h2>
+                    <p>Requests nobody has opened yet</p>
+                </div>
+                <a class="btn btn-secondary btn-sm" href="admin_messages.php">Open the inbox</a>
             </div>
-        </div>
-    </footer>
-    <script src="script.js"></script>
-</body>
-</html>
+
+            <?php if ($recent === []): ?>
+                <div class="panel__body">
+                    <?= empty_state('Inbox clear', 'Every request has been opened. New ones land here first.') ?>
+                </div>
+            <?php else: ?>
+                <div class="panel__body panel__body--flush">
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>From</th>
+                                    <th>Service</th>
+                                    <th>Received</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach (array_slice($recent, 0, 6) as $row): ?>
+                                <tr class="row--unread">
+                                    <td class="num"><?= e($row['reference']) ?></td>
+                                    <td>
+                                        <span class="table__primary"><?= e($row['fullname']) ?></span>
+                                        <span class="table__muted"><?= e($row['email']) ?></span>
+                                    </td>
+                                    <td><?= e($row['service'] ?: '—') ?></td>
+                                    <td class="table__muted nowrap"><?= e(time_ago($row['submitted_at'])) ?></td>
+                                    <td class="table__actions">
+                                        <a class="btn btn-secondary btn-sm"
+                                           href="admin_message.php?id=<?= (int) $row['id'] ?>">Open</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </section>
+    </div>
+
+    <aside class="stack">
+        <section class="panel">
+            <div class="panel__head"><div><h2>Recent activity</h2><p>Every change staff have made</p></div></div>
+            <div class="panel__body">
+                <?php if ($auditFeed === []): ?>
+                    <p class="muted small">Nothing logged yet. Actions you take will show up here.</p>
+                <?php else: ?>
+                    <div class="feed">
+                        <?php foreach ($auditFeed as $entry): ?>
+                            <?php
+                            $kind = 'change';
+                            if (strpos($entry['action'], '.delete') !== false) {
+                                $kind = 'delete';
+                            } elseif (strpos($entry['action'], '.create') !== false
+                                   || strpos($entry['action'], '.upload') !== false) {
+                                $kind = 'create';
+                            }
+                            ?>
+                            <div class="feed__item">
+                                <span class="feed__dot feed__dot--<?= e($kind) ?>"></span>
+                                <div>
+                                    <p class="feed__text"><?= e($entry['summary'] ?: $entry['action']) ?></p>
+                                    <p class="feed__meta">
+                                        <?= e($entry['actor_name']) ?> · <?= e(time_ago($entry['created_at'])) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="panel__foot">
+                <a class="btn btn-ghost btn-sm" href="admin_audit.php">See the full audit trail</a>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__head"><div><h2>Quick actions</h2></div></div>
+            <div class="panel__body stack-sm">
+                <a class="btn btn-secondary btn-full" href="admin_invoice_form.php">Draft an invoice</a>
+                <a class="btn btn-secondary btn-full" href="documents.php">Review documents</a>
+                <a class="btn btn-secondary btn-full" href="admin_users.php">Manage clients</a>
+            </div>
+        </section>
+    </aside>
+</div>
+
+<?php portal_foot();
