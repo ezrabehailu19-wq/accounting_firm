@@ -1,236 +1,153 @@
 <?php
-session_start();
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
-}
-include 'includes/includes.inc.php';
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/includes.inc.php';
+require_once __DIR__ . '/includes/layout.inc.php';
+
+$admin     = require_admin();
 $controler = new Controler();
-$users = $controler->getAllUsers();
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users | Selamawit H/Mariam</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body style="display:flex; flex-direction:column; min-height:100vh;">
-    <header class="header" id="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <div class="logo-box">SH</div>
-                <div class="logo-text">
-                    <h1>Selamawit H/Mariam</h1>
-                    <p>Accounting & Financial Consulting</p>
-                </div>
-            </a>
-            <nav class="navigation" id="navMenu">
-                <ul>
-                    <li><a href="admin.php" class="nav-link">Dashboard</a></li>
-                    <li><a href="admin_messages.php" class="nav-link">Messages</a></li>
-                    <li><a href="admin_users.php" class="nav-link active">Users</a></li>
-                    <li><a href="index.html" class="nav-link">View Site</a></li>
-                </ul>
-                <a href="logout.php" class="btn btn-primary nav-cta">Logout</a>
-            </nav>
-        </div>
-    </header>
 
-    <main style="flex:1;">
-        <section class="page-section">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-badge">Admin Panel</span>
-                    <h2 class="section-title">Registered Users</h2>
-                    <p class="section-subtitle">All users registered on the platform</p>
-                </div>
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_guard('admin_users.php');
 
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden;">
-                        <thead>
-                            <tr style="background:var(--primary); color:white;">
-                                <th style="padding:1rem; text-align:left;">#</th>
-                                <th style="padding:1rem; text-align:left;">Username</th>
-                                <th style="padding:1rem; text-align:left;">Role</th>
-                                <th style="padding:1rem; text-align:left;">Registered</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $users->fetch_assoc()): ?>
-                            <tr style="border-bottom:1px solid var(--gray-200);">
-                                <td style="padding:1rem;"><?php echo $row['id']; ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['username']); ?></td>
-                                <td style="padding:1rem;">
-                                    <span style="
-                                        padding:0.3rem 0.8rem;
-                                        border-radius:999px;
-                                        font-size:0.8rem;
-                                        background: <?php echo $row['role'] === 'admin' ? '#dbeafe' : '#d1fae5'; ?>;
-                                        color: <?php echo $row['role'] === 'admin' ? '#1e3a8a' : '#065f46'; ?>;
-                                    ">
-                                        <?php echo $row['role']; ?>
-                                    </span>
-                                </td>
-                                <td style="padding:1rem;"><?php echo $row['created_at']; ?></td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
+    $action = post_str('action');
+    $id     = post_int('id');
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2025</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-    <script src="script.js"></script>
-</body>
-</html><?php
-session_start();
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
+    if ($action === 'role') {
+        $result = $controler->changeUserRole($id, post_str('role'), $admin);
+        flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Role updated.' : $result['error']);
+    } elseif ($action === 'status') {
+        $result = $controler->changeUserStatus($id, post_str('status'), $admin);
+        flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Account updated.' : $result['error']);
+    }
+
+    redirect(query_with([]));
 }
-include 'includes/includes.inc.php';
-$controler = new Controler();
-$messages = $controler->getMessages();
-$total = $messages->num_rows;
-$messages = $controler->getMessages();
+
+$search = get_str('q');
+$role   = get_str('role');
+$page   = current_page();
+
+if ($role !== '' && !in_array($role, ['user', 'admin'], true)) {
+    $role = '';
+}
+
+$result = $controler->users($page, $search, $role);
+
+portal_head('Clients', 'clients', [
+    'subtitle' => 'Everyone with an account on the portal',
+    'wide'     => true,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Selamawit H/Mariam</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body style="display:flex; flex-direction:column; min-height:100vh;">
-    <header class="header" id="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <div class="logo-box">SH</div>
-                <div class="logo-text">
-                    <h1>Selamawit H/Mariam</h1>
-                    <p>Accounting & Financial Consulting</p>
-                </div>
-            </a>
-            <nav class="navigation" id="navMenu">
-                <ul>
-                    <li><a href="admin.php" class="nav-link active">Dashboard</a></li>
-                    <li><a href="admin_messages.php" class="nav-link">Messages</a></li>
-                    <li><a href="admin_users.php" class="nav-link">Users</a></li>
-                    <li><a href="index.html" class="nav-link">View Site</a></li>
-                </ul>
-                <a href="logout.php" class="btn btn-primary nav-cta">Logout</a>
-            </nav>
+
+<section class="panel">
+    <div class="filters">
+        <div class="tabs">
+            <a class="tab<?= $role === '' ? ' is-active' : '' ?>" href="admin_users.php">Everyone</a>
+            <a class="tab<?= $role === 'user' ? ' is-active' : '' ?>" href="admin_users.php?role=user">Clients</a>
+            <a class="tab<?= $role === 'admin' ? ' is-active' : '' ?>" href="admin_users.php?role=admin">Staff</a>
         </div>
-    </header>
 
-    <main style="flex:1;">
-        <section class="page-section">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-badge">Admin Panel</span>
-                    <h2 class="section-title">Welcome, Selamawit!</h2>
-                    <p class="section-subtitle">Manage your website from here</p>
-                </div>
+        <form method="get" action="admin_users.php" role="search">
+            <?php if ($role !== ''): ?>
+                <input type="hidden" name="role" value="<?= e($role) ?>">
+            <?php endif; ?>
+            <input type="search" name="q" value="<?= e($search) ?>"
+                   placeholder="Name, username, email or business" aria-label="Search clients">
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+            <?php if ($search !== ''): ?>
+                <a class="btn btn-ghost btn-sm" href="admin_users.php">Clear</a>
+            <?php endif; ?>
+        </form>
+    </div>
 
-                <div class="stats-grid" style="margin-bottom:3rem;">
-                    <div class="stat-item">
-                        <div class="stat-icon">✉️</div>
-                        <span class="stat-number"><?php echo $total; ?></span>
-                        <p class="stat-label">Total Messages</p>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-icon">🆕</div>
-                        <span class="stat-number"><?php echo $controler->getNewMessagesCount(); ?></span>
-                        <p class="stat-label">New Messages</p>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-icon">👥</div>
-                        <span class="stat-number"><?php echo $controler->countUsers(); ?></span>
-                        <p class="stat-label">Registered Users</p>
-                    </div>
-                </div>
+    <?php if ($result['rows'] === []): ?>
+        <div class="panel__body">
+            <?= empty_state(
+                'No accounts match',
+                'Try a different search, or clear the filter to see everyone.',
+                '<a class="btn btn-secondary" href="admin_users.php">Clear filters</a>'
+            ) ?>
+        </div>
+    <?php else: ?>
+        <div class="panel__body panel__body--flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Business</th>
+                            <th>Contact</th>
+                            <th>Access</th>
+                            <th>Last seen</th>
+                            <th>Joined</th>
+                            <th class="num">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($result['rows'] as $row): ?>
+                        <tr>
+                            <td>
+                                <span class="table__primary"><?= e($row['full_name'] ?: $row['username']) ?></span>
+                                <span class="table__muted">@<?= e($row['username']) ?></span>
+                            </td>
+                            <td><?= e($row['company'] ?: '—') ?></td>
+                            <td>
+                                <span class="table__muted"><?= e($row['email']) ?></span>
+                                <?php if ($row['phone']): ?>
+                                    <span class="table__muted"><?= e($row['phone']) ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="nowrap">
+                                <?= status_pill($row['role'], $row['role'] === 'admin' ? 'Staff' : 'Client') ?>
+                                <?php if ($row['status'] === 'suspended'): ?>
+                                    <?= status_pill('suspended', 'Suspended') ?>
+                                <?php endif; ?>
+                            </td>
+                            <td class="table__muted nowrap"><?= e($row['last_login_at'] ? time_ago($row['last_login_at']) : 'Never') ?></td>
+                            <td class="table__muted nowrap"><?= e(fmt_date($row['created_at'])) ?></td>
+                            <td>
+                                <div class="table__actions">
+                                    <a class="btn btn-ghost btn-sm"
+                                       href="admin_invoices.php?client=<?= (int) $row['id'] ?>">Invoices</a>
+                                    <a class="btn btn-ghost btn-sm"
+                                       href="documents.php?owner=<?= (int) $row['id'] ?>">Files</a>
 
-                <div class="section-header">
-                    <span class="section-badge">Inbox</span>
-                    <h2 class="section-title">Recent Messages</h2>
-                </div>
+                                    <?php if ((int) $row['id'] !== (int) $admin['id']): ?>
+                                        <form method="post" action="admin_users.php">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="role">
+                                            <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                                            <input type="hidden" name="role" value="<?= $row['role'] === 'admin' ? 'user' : 'admin' ?>">
+                                            <button type="submit" class="btn btn-secondary btn-sm">
+                                                <?= $row['role'] === 'admin' ? 'Make client' : 'Make staff' ?>
+                                            </button>
+                                        </form>
 
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden;">
-                        <thead>
-                            <tr style="background:var(--primary); color:white;">
-                                <th style="padding:1rem; text-align:left;">#</th>
-                                <th style="padding:1rem; text-align:left;">Name</th>
-                                <th style="padding:1rem; text-align:left;">Email</th>
-                                <th style="padding:1rem; text-align:left;">Phone</th>
-                                <th style="padding:1rem; text-align:left;">Service</th>
-                                <th style="padding:1rem; text-align:left;">Message</th>
-                                <th style="padding:1rem; text-align:left;">Date</th>
-                                <th style="padding:1rem; text-align:left;">Status</th>
-                                <th style="padding:1rem; text-align:left;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $messages->fetch_assoc()): ?>
-                            <tr style="border-bottom:1px solid var(--gray-200);">
-                                <td style="padding:1rem;"><?php echo $row['id']; ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['fullname']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['email']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['phone']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['service']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['message']); ?></td>
-                                <td style="padding:1rem;"><?php echo $row['submitted_at']; ?></td>
-                                <td style="padding:1rem;">
-                                    <?php
-                                        $dashColors = [
-                                            'new'     => ['bg' => '#dbeafe', 'text' => '#1e40af'],
-                                            'read'    => ['bg' => '#fef3c7', 'text' => '#92400e'],
-                                            'replied' => ['bg' => '#d1fae5', 'text' => '#065f46'],
-                                        ];
-                                        $c = $dashColors[$row['status']] ?? $dashColors['new'];
-                                    ?>
-                                    <span style="background:<?php echo $c['bg']; ?>; color:<?php echo $c['text']; ?>; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">
-                                        <?php echo ucfirst($row['status']); ?>
-                                    </span>
-                                </td>
-                                <td style="padding:1rem;">
-                                    <form action="delete_message.php" method="post"
-                                          onsubmit="return confirm('Delete this message?')" style="margin:0;">
-                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                        <button type="submit"
-                                                style="color:white; background:#ef4444; padding:0.4rem 0.8rem; border:none; border-radius:var(--radius); cursor:pointer; font-size:0.85rem;">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2025</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+                                        <form method="post" action="admin_users.php"
+                                              data-confirm="<?= $row['status'] === 'suspended' ? 'Reactivate' : 'Suspend' ?> @<?= e($row['username']) ?>?">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="status">
+                                            <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                                            <input type="hidden" name="status" value="<?= $row['status'] === 'suspended' ? 'active' : 'suspended' ?>">
+                                            <button type="submit" class="btn <?= $row['status'] === 'suspended' ? 'btn-success' : 'btn-danger' ?> btn-sm">
+                                                <?= $row['status'] === 'suspended' ? 'Reactivate' : 'Suspend' ?>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="table__muted small">That's you</span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </footer>
-    <script src="script.js"></script>
-</body>
-</html>
+
+        <?= render_pagination($result['total'], $page, 'admin_users.php') ?>
+    <?php endif; ?>
+</section>
+
+<?php portal_foot();
