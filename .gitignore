@@ -1,13 +1,23 @@
-# Environment variables (contains local database credentials)
+# Local configuration — contains the database password
 .env
 
-# Dev-only log of password reset links (contains sensitive tokens)
-reset_links_dev.log
+# Uploaded client documents and the mail log. Never in version control:
+# this is client financial data.
+storage/documents/*
+!storage/documents/.gitkeep
+storage/mail.log
 
-# Dev-only log of contact form notifications
-contact_notifications_dev.log
+# The one-time setup script should be deleted after use, not committed
+# with any edits.
+# setup_admin.php
 
-# OS / editor noise
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
 .DS_Store
 Thumbs.db
-.vscode/
+
+# Dependencies and build output, if you ever add them
+/vendor/
+/node_modules/
