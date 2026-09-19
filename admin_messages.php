@@ -1,177 +1,151 @@
 <?php
-session_start();
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
-}
-include 'includes/includes.inc.php';
+declare(strict_types=1);
+
+require_once __DIR__ . '/includes/includes.inc.php';
+require_once __DIR__ . '/includes/layout.inc.php';
+
+$admin     = require_admin();
 $controler = new Controler();
 
-$statusFilter = $_GET['status'] ?? 'all';
-if (!in_array($statusFilter, ['all', 'new', 'read', 'replied'], true)) {
-    $statusFilter = 'all';
+// Status changes post back to this page so the filters and page number
+// the user was looking at survive the round trip.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_guard('admin_messages.php');
+
+    $action = post_str('action');
+    $id     = post_int('id');
+
+    if ($action === 'status') {
+        $result = $controler->updateRequestStatus($id, post_str('status'), $admin);
+        flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Status updated.' : $result['error']);
+    } elseif ($action === 'delete') {
+        $result = $controler->removeRequest($id, $admin);
+        flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Request deleted.' : $result['error']);
+    }
+
+    // Redirect after POST so a refresh doesn't repeat the action.
+    redirect(query_with([]));
 }
-$page = max(1, (int) ($_GET['page'] ?? 1));
 
-$messages = $controler->getMessagesPage($statusFilter, $page);
-$totalPages = $controler->getMessagesTotalPages($statusFilter);
+$status = get_str('status');
+$search = get_str('q');
+$page   = current_page();
 
-$statusBadgeColors = [
-    'new'     => ['bg' => '#dbeafe', 'text' => '#1e40af'],
-    'read'    => ['bg' => '#fef3c7', 'text' => '#92400e'],
-    'replied' => ['bg' => '#d1fae5', 'text' => '#065f46'],
-];
+$allowed = ['new', 'read', 'in_progress', 'replied', 'closed'];
+if ($status !== '' && !in_array($status, $allowed, true)) {
+    $status = '';
+}
 
-$tabs = ['all' => 'All', 'new' => 'New', 'read' => 'Read', 'replied' => 'Replied'];
+$result = $controler->requests($page, $status, $search);
+$counts = $controler->requestStatusCounts();
+
+portal_head('Requests', 'inbox', [
+    'subtitle' => 'Everything that came in through the contact form',
+    'wide'     => true,
+]);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages | Selamawit H/Mariam</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body style="display:flex; flex-direction:column; min-height:100vh;">
-    <header class="header" id="header">
-        <div class="header-container">
-            <a href="index.html" class="logo">
-                <div class="logo-box">SH</div>
-                <div class="logo-text">
-                    <h1>Selamawit H/Mariam</h1>
-                    <p>Accounting & Financial Consulting</p>
-                </div>
-            </a>
-            <nav class="navigation" id="navMenu">
-                <ul>
-                    <li><a href="admin.php" class="nav-link">Dashboard</a></li>
-                    <li><a href="admin_messages.php" class="nav-link active">Messages</a></li>
-                    <li><a href="admin_users.php" class="nav-link">Users</a></li>
-                    <li><a href="index.html" class="nav-link">View Site</a></li>
-                </ul>
-                <a href="logout.php" class="btn btn-primary nav-cta">Logout</a>
-            </nav>
+
+<section class="panel">
+    <div class="filters">
+        <div class="tabs">
+            <?php
+            $tabs = [
+                ''            => ['All', $counts['all']],
+                'new'         => ['New', $counts['new']],
+                'read'        => ['Read', $counts['read']],
+                'in_progress' => ['In progress', $counts['in_progress']],
+                'replied'     => ['Replied', $counts['replied']],
+                'closed'      => ['Closed', $counts['closed']],
+            ];
+            foreach ($tabs as $key => [$label, $count]):
+                $href = 'admin_messages.php' . ($key !== '' ? '?status=' . urlencode($key) : '');
+                if ($search !== '') {
+                    $href .= ($key !== '' ? '&' : '?') . 'q=' . urlencode($search);
+                }
+                ?>
+                <a class="tab<?= $status === $key ? ' is-active' : '' ?>" href="<?= e($href) ?>">
+                    <?= e($label) ?><span class="tab__count"><?= (int) $count ?></span>
+                </a>
+            <?php endforeach; ?>
         </div>
-    </header>
 
-    <main style="flex:1;">
-        <section class="page-section">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-badge">Admin Panel</span>
-                    <h2 class="section-title">All Messages</h2>
-                    <p class="section-subtitle">All contact form submissions from clients</p>
-                </div>
+        <form method="get" action="admin_messages.php" role="search">
+            <?php if ($status !== ''): ?>
+                <input type="hidden" name="status" value="<?= e($status) ?>">
+            <?php endif; ?>
+            <input type="search" name="q" value="<?= e($search) ?>"
+                   placeholder="Name, email, reference or text" aria-label="Search requests">
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+            <?php if ($search !== ''): ?>
+                <a class="btn btn-ghost btn-sm" href="admin_messages.php<?= $status !== '' ? '?status=' . url_attr($status) : '' ?>">Clear</a>
+            <?php endif; ?>
+        </form>
+    </div>
 
-                <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; flex-wrap:wrap;">
-                    <?php foreach ($tabs as $key => $label): ?>
-                        <a href="admin_messages.php?status=<?php echo $key; ?>"
-                           style="padding:0.5rem 1rem; border-radius:var(--radius); text-decoration:none; font-size:0.9rem;
-                                  background: <?php echo $statusFilter === $key ? 'var(--primary)' : '#e5e7eb'; ?>;
-                                  color: <?php echo $statusFilter === $key ? 'white' : '#374151'; ?>;">
-                            <?php echo $label; ?>
-                        </a>
+    <?php if ($result['rows'] === []): ?>
+        <div class="panel__body">
+            <?= empty_state(
+                $search !== '' ? 'No requests match that search' : 'Nothing here yet',
+                $search !== ''
+                    ? 'Try a shorter search term, or clear the filter to see everything.'
+                    : 'Requests submitted through the website contact form land in this list.',
+                $search !== '' ? '<a class="btn btn-secondary" href="admin_messages.php">Clear filters</a>' : ''
+            ) ?>
+        </div>
+    <?php else: ?>
+        <div class="panel__body panel__body--flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>From</th>
+                            <th>Service</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Received</th>
+                            <th class="num">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($result['rows'] as $row): ?>
+                        <tr<?= $row['status'] === 'new' ? ' class="row--unread"' : '' ?>>
+                            <td class="num"><?= e($row['reference'] ?: '—') ?></td>
+                            <td>
+                                <span class="table__primary"><?= e($row['fullname']) ?></span>
+                                <span class="table__muted"><?= e($row['email']) ?></span>
+                            </td>
+                            <td><?= e($row['service'] ?: '—') ?></td>
+                            <td>
+                                <span class="table__truncate table__muted"><?= e($row['message']) ?></span>
+                            </td>
+                            <td><?= status_pill($row['status'], request_status_label($row['status'])) ?></td>
+                            <td class="table__muted nowrap" title="<?= e(fmt_datetime($row['submitted_at'])) ?>">
+                                <?= e(time_ago($row['submitted_at'])) ?>
+                            </td>
+                            <td>
+                                <div class="table__actions">
+                                    <a class="btn btn-secondary btn-sm"
+                                       href="admin_message.php?id=<?= (int) $row['id'] ?>">Open</a>
+
+                                    <form method="post" action="admin_messages.php"
+                                          data-confirm="Delete <?= e($row['reference'] ?: 'this request') ?>? This cannot be undone.">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
-                </div>
-
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden;">
-                        <thead>
-                            <tr style="background:var(--primary); color:white;">
-                                <th style="padding:1rem; text-align:left;">#</th>
-                                <th style="padding:1rem; text-align:left;">Name</th>
-                                <th style="padding:1rem; text-align:left;">Email</th>
-                                <th style="padding:1rem; text-align:left;">Phone</th>
-                                <th style="padding:1rem; text-align:left;">Service</th>
-                                <th style="padding:1rem; text-align:left;">Message</th>
-                                <th style="padding:1rem; text-align:left;">Date</th>
-                                <th style="padding:1rem; text-align:left;">Status</th>
-                                <th style="padding:1rem; text-align:left;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($messages->num_rows === 0): ?>
-                                <tr>
-                                    <td colspan="9" style="padding:2rem; text-align:center; color:#6b7280;">
-                                        No messages here.
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                            <?php while ($row = $messages->fetch_assoc()): ?>
-                            <tr style="border-bottom:1px solid var(--gray-200);">
-                                <td style="padding:1rem;"><?php echo $row['id']; ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['fullname']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['email']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['phone']); ?></td>
-                                <td style="padding:1rem;"><?php echo htmlspecialchars($row['service']); ?></td>
-                                <td style="padding:1rem; max-width:250px;"><?php echo htmlspecialchars($row['message']); ?></td>
-                                <td style="padding:1rem; white-space:nowrap;"><?php echo $row['submitted_at']; ?></td>
-                                <td style="padding:1rem;">
-                                    <?php $colors = $statusBadgeColors[$row['status']] ?? $statusBadgeColors['new']; ?>
-                                    <span style="background:<?php echo $colors['bg']; ?>; color:<?php echo $colors['text']; ?>; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">
-                                        <?php echo ucfirst($row['status']); ?>
-                                    </span>
-                                </td>
-                                <td style="padding:1rem;">
-                                    <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                                        <form action="update_message_status.php" method="post" style="display:flex; gap:0.4rem; margin:0;">
-                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                            <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($statusFilter); ?>">
-                                            <input type="hidden" name="page" value="<?php echo (int) $page; ?>">
-                                            <select name="status" style="padding:0.3rem; border-radius:var(--radius); border:1px solid var(--gray-200); font-size:0.8rem;">
-                                                <option value="new" <?php echo $row['status'] === 'new' ? 'selected' : ''; ?>>New</option>
-                                                <option value="read" <?php echo $row['status'] === 'read' ? 'selected' : ''; ?>>Read</option>
-                                                <option value="replied" <?php echo $row['status'] === 'replied' ? 'selected' : ''; ?>>Replied</option>
-                                            </select>
-                                            <button type="submit"
-                                                    style="color:white; background:var(--primary); padding:0.3rem 0.6rem; border:none; border-radius:var(--radius); cursor:pointer; font-size:0.8rem;">
-                                                Save
-                                            </button>
-                                        </form>
-                                        <form action="delete_message.php" method="post"
-                                              onsubmit="return confirm('Delete this message?')" style="margin:0;">
-                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                            <button type="submit"
-                                                    style="color:white; background:#ef4444; padding:0.4rem 0.8rem; border:none; border-radius:var(--radius); cursor:pointer; font-size:0.85rem;">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="display:flex; justify-content:center; align-items:center; gap:1rem; margin-top:1.5rem;">
-                    <?php if ($page > 1): ?>
-                        <a href="admin_messages.php?status=<?php echo urlencode($statusFilter); ?>&page=<?php echo $page - 1; ?>"
-                           style="padding:0.5rem 1rem; border-radius:var(--radius); background:#e5e7eb; color:#374151; text-decoration:none; font-size:0.9rem;">
-                            Previous
-                        </a>
-                    <?php endif; ?>
-                    <span style="font-size:0.9rem; color:#374151;">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-                    <?php if ($page < $totalPages): ?>
-                        <a href="admin_messages.php?status=<?php echo urlencode($statusFilter); ?>&page=<?php echo $page + 1; ?>"
-                           style="padding:0.5rem 1rem; border-radius:var(--radius); background:#e5e7eb; color:#374151; text-decoration:none; font-size:0.9rem;">
-                            Next
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2025</span> Selamawit H/Mariam Accounting Firm. All rights reserved.</p>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </footer>
-    <script src="script.js"></script>
-</body>
-</html>
+
+        <?= render_pagination($result['total'], $page, 'admin_messages.php') ?>
+    <?php endif; ?>
+</section>
+
+<?php portal_foot();
