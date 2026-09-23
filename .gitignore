@@ -7,9 +7,6 @@ storage/documents/*
 !storage/documents/.gitkeep
 storage/mail.log
 
-# The one-time setup script should be deleted after use, not committed
-setup_admin.php
-
 # Editor and OS noise
 .vscode/
 .idea/
