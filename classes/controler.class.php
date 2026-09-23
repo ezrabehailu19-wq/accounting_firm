@@ -514,7 +514,7 @@ class Controler extends Model
 
         // Trust the file's actual contents, not the extension or the
         // Content-Type header the browser sent — both are attacker-chosen.
-        $finfo    = new finfo(FILEINFO_MIME_TYPE);
+        $finfo    = new \finfo(FILEINFO_MIME_TYPE);
         $realMime = (string) $finfo->file($file['tmp_name']);
 
         if (!in_array($realMime, $allowed[$extension], true)) {
